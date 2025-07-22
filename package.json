@@ -32,6 +32,9 @@
   ],
   "author": "ekm1",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/ekm1/react-when.git"
