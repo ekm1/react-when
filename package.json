@@ -1,6 +1,6 @@
 {
   "name": "@ekm1/react-when",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "Angular-inspired deferred loading for React with compound triggers, prefetching, and advanced performance optimizations",
   "main": "dist/index.js",
