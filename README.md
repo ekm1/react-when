@@ -6,7 +6,7 @@
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@ekm1/react-when)](https://bundlephobia.com/package/@ekm1/react-when)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)](https://www.typescriptlang.org/)
 
-> **Angular-inspired deferred loading for React** - Smart, performant component loading with compound triggers, prefetching, and zero layout shift.
+> **Angular-inspired deferred loading for React** - Smart, performant component loading with compound triggers, prefetching.
 
 ## ✨ Features
 
