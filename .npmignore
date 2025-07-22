@@ -1,0 +1,10 @@
+src/
+example/
+*.log
+.DS_Store
+tsconfig.json
+rollup.config.js
+jest.config.js
+.env
+coverage/
+*.tsbuildinfo

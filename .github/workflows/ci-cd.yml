@@ -1,0 +1,174 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ created ]
+
+jobs:
+  # Build and test the library
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run tests
+      run: npm test
+      
+    - name: Build library
+      run: npm run build
+      
+    - name: Check bundle size
+      run: |
+        ls -la dist/
+        echo "CJS Bundle size:" && du -h dist/index.js
+        echo "ESM Bundle size:" && du -h dist/index.esm.js
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts-node-${{ matrix.node-version }}
+        path: |
+          dist/
+          package.json
+        retention-days: 7
+
+  # Build and test the example
+  build-example:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install library dependencies
+      run: npm ci
+      
+    - name: Build library
+      run: npm run build
+      
+    - name: Install example dependencies
+      run: |
+        cd example
+        npm ci
+        
+    - name: Build example
+      run: |
+        cd example
+        npm run build
+        
+    - name: Upload example build
+      uses: actions/upload-artifact@v4
+      with:
+        name: example-build
+        path: example/dist/
+        retention-days: 7
+
+  # Publish to npm on release
+  publish:
+    runs-on: ubuntu-latest
+    needs: [build-and-test, build-example]
+    if: github.event_name == 'release' && github.event.action == 'created'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        registry-url: 'https://registry.npmjs.org'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build library
+      run: npm run build
+      
+    - name: Run final tests
+      run: npm test
+      
+    - name: Publish to npm
+      run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Deploy example to GitHub Pages (optional)
+  deploy-example:
+    runs-on: ubuntu-latest
+    needs: build-example
+    if: github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install library dependencies
+      run: npm ci
+      
+    - name: Build library
+      run: npm run build
+      
+    - name: Install example dependencies
+      run: |
+        cd example
+        npm ci
+        
+    - name: Build example with base path
+      run: |
+        cd example
+        npm run build -- --base=/react-when/
+        
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+      
+    - name: Upload to GitHub Pages
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: example/dist
+        
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
